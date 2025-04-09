@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from scipy.ndimage import rotate
 import struct
 from array import array
@@ -65,20 +64,39 @@ class MnistDataloader(object):
 
         return np.matrix(images), np.matrix(labels)
 
-    def load_data(self, noisy_test=False):
-        x_train, y_train = self.read_images_labels(self.training_images_filepath, self.training_labels_filepath, True)
+    def load_data(self, noisy_train=True, noisy_test=False):
+        x_train, y_train = self.read_images_labels(
+            self.training_images_filepath, self.training_labels_filepath, noisy_train)
         x_test, y_test = self.read_images_labels(self.test_images_filepath, self.test_labels_filepath, noisy_test)
         return (x_train, y_train), (x_test, y_test)
 
 
-def read_data(input_path, noisy_test=False):
-    training_images_filepath = join(input_path, 'train-images-idx3-ubyte/train-images-idx3-ubyte')
-    training_labels_filepath = join(input_path, 'train-labels-idx1-ubyte/train-labels-idx1-ubyte')
-    test_images_filepath = join(input_path, 't10k-images-idx3-ubyte/t10k-images-idx3-ubyte')
-    test_labels_filepath = join(input_path, 't10k-labels-idx1-ubyte/t10k-labels-idx1-ubyte')
+def read_data(dataset, noisy_train=True, noisy_test=False):
+    if dataset == 'digits':
+        training_images_filepath = join('data', dataset, 'train-images-idx3-ubyte/train-images-idx3-ubyte')
+        training_labels_filepath = join('data', dataset, 'train-labels-idx1-ubyte/train-labels-idx1-ubyte')
+        test_images_filepath = join('data', dataset, 't10k-images-idx3-ubyte/t10k-images-idx3-ubyte')
+        test_labels_filepath = join('data', dataset, 't10k-labels-idx1-ubyte/t10k-labels-idx1-ubyte')
+    elif dataset == 'fashion':
+        training_images_filepath = join('data', dataset, 'train-images-idx3-ubyte')
+        training_labels_filepath = join('data', dataset, 'train-labels-idx1-ubyte')
+        test_images_filepath = join('data', dataset, 't10k-images-idx3-ubyte')
+        test_labels_filepath = join('data', dataset, 't10k-labels-idx1-ubyte')
+    elif dataset == 'emnist':
+        training_images_filepath = join('data', dataset, 'emnist_source_files',
+                                        'emnist-letters-train-images-idx3-ubyte')
+        training_labels_filepath = join('data', dataset, 'emnist_source_files',
+                                        'emnist-letters-train-labels-idx1-ubyte')
+        test_images_filepath = join('data', dataset, 'emnist_source_files', 'emnist-letters-test-images-idx3-ubyte')
+        test_labels_filepath = join('data', dataset, 'emnist_source_files', 'emnist-letters-test-labels-idx1-ubyte')
 
     mnist_dataloader = MnistDataloader(training_images_filepath, training_labels_filepath,
                                        test_images_filepath, test_labels_filepath)
 
-    (x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data(noisy_test)
+    (x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data(noisy_train, noisy_test)
+
+    if dataset == 'emnist':
+        y_train = y_train - 1
+        y_test = y_test - 1
+
     return x_train, y_train, x_test, y_test
