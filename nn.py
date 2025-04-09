@@ -2,12 +2,16 @@ from collections import Counter
 from data import read_data
 import numpy as np
 
-input_path = 'data/'
-x_train, y_train, x_test, y_test = read_data(input_path)
-layer_sizes = [x_train[0].shape[1], 128, 64, 10]
-
-
 class Layer:
+
+    @staticmethod
+    def relu(val):
+        return np.maximum(0, val)
+
+    @staticmethod
+    def d_relu(val):
+        return (val > 0).astype(float)
+
     @staticmethod
     def sigmoid(val):
         return 1 / (1 + np.exp(-val))
@@ -27,23 +31,30 @@ class Layer:
     def d_softmax(val):
         return np.ones_like(val)
 
-    def __init__(self, nodes_in, nodes_out, activation=sigmoid):
+    def __init__(self, nodes_in, nodes_out, activation=relu):
         self.nodes_in = nodes_in
         self.nodes_out = nodes_out
+        self.activation = activation
+        self.d_activation = None
+        self.weights = None
 
-        # Xavier initialization for weights
-        limit = np.sqrt(6 / (nodes_in + nodes_out))
-        self.weights = np.random.uniform(-limit, limit, (nodes_in, nodes_out))
+        match self.activation:
+            case Layer.relu:
+                self.d_activation = Layer.d_relu
+                stddev = np.sqrt(2 / nodes_in)
+                self.weights = np.random.randn(nodes_in, nodes_out) * stddev
+            case Layer.sigmoid:
+                limit = np.sqrt(6 / (nodes_in + nodes_out))
+                self.weights = np.random.uniform(-limit, limit, (nodes_in, nodes_out))
+                self.d_activation = Layer.d_sigmoid
+            case Layer.softmax:
+                limit = np.sqrt(6 / (nodes_in + nodes_out))
+                self.weights = np.random.uniform(-limit, limit, (nodes_in, nodes_out))
+                self.d_activation = Layer.d_softmax
+
         self.biases = np.zeros(nodes_out)
 
         self.last_z = np.zeros(nodes_in)
-
-        self.activation = activation
-        if activation == Layer.sigmoid:
-            self.d_activation = Layer.d_sigmoid
-        else:
-            self.d_activation = Layer.d_softmax
-
         self.last_input = np.zeros(nodes_in)
 
     def forward(self, inputs):
@@ -65,7 +76,7 @@ class NN:
             if i == len(layer_sizes) - 2:
                 self.layers.append(Layer(layer_sizes[i], layer_sizes[i+1], Layer.softmax))
             else:
-                self.layers.append(Layer(layer_sizes[i], layer_sizes[i+1]))
+                self.layers.append(Layer(layer_sizes[i], layer_sizes[i+1], Layer.relu))
 
     def calculate_outputs(self, input):
         for layer in self.layers:
@@ -168,7 +179,10 @@ def train(network: NN, x_train, y_train, x_test, y_test, lr=0.01, epochs=5, repo
     print([appearances[i] for i in range(10)])
 
 
+input_path = 'data/'
+x_train, y_train, x_test, y_test = read_data(input_path, noise=True)
+layer_sizes = [x_train[0].shape[1], 128, 64, 10]
 x_train = x_train / 255.0
 x_test = x_test / 255.0
 n = NN(layer_sizes)
-train(n, x_train, y_train, x_test, y_test, lr=0.001,epochs=10)
+train(n, x_train, y_train, x_test, y_test, lr=0.001, epochs=10)
