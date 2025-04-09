@@ -2,6 +2,7 @@ from collections import Counter
 from data import read_data
 import numpy as np
 
+
 class Layer:
 
     @staticmethod
@@ -54,6 +55,9 @@ class Layer:
 
         self.biases = np.zeros(nodes_out)
 
+        self.w_velocities = np.zeros_like(self.weights)
+        self.b_velocities = np.zeros_like(self.biases)
+
         self.last_z = np.zeros(nodes_in)
         self.last_input = np.zeros(nodes_in)
 
@@ -64,9 +68,12 @@ class Layer:
         self.last_z = z
         return self.activation(z)
 
-    def apply_gradient(self, lr, grad_w, grad_b):
-        self.weights -= lr * grad_w
-        self.biases -= lr * grad_b
+    def apply_gradient(self, lr, momentum, grad_w, grad_b):
+        self.w_velocities = momentum * self.w_velocities - lr * grad_w
+        self.b_velocities = momentum * self.b_velocities - lr * grad_b
+
+        self.weights += self.w_velocities
+        self.biases += self.b_velocities
 
 
 class NN:
@@ -87,9 +94,9 @@ class NN:
         outputs = self.calculate_outputs(input)
         return np.argmax(outputs)
 
-    def _apply_gradients(self, learn, grad_w, grad_b):
+    def _apply_gradients(self, learn, momentum, grad_w, grad_b):
         for i, layer in enumerate(self.layers):
-            layer.apply_gradient(learn, grad_w[i], grad_b[i])
+            layer.apply_gradient(learn, momentum, grad_w[i], grad_b[i])
 
     def _cost(self, x, expected_label):
         output = self.calculate_outputs(x)
@@ -127,12 +134,12 @@ class NN:
 
         return grad_w, grad_b
 
-    def learn(self, x, y, lr):
+    def learn(self, x, y, lr, momentum):
         grad_w, grad_b = self.backprop(x, y)
-        self._apply_gradients(lr, grad_w, grad_b)
+        self._apply_gradients(lr, momentum, grad_w, grad_b)
 
 
-def train(network: NN, x_train, y_train, x_test, y_test, lr=0.01, epochs=5, report_every=1000):
+def train(network: NN, x_train, y_train, x_test, y_test, lr=0.01, momentum=0.5, epochs=5, report_every=1000):
 
     y_train = np.array(y_train).flatten()
     y_test = np.array(y_test).flatten()
@@ -143,7 +150,7 @@ def train(network: NN, x_train, y_train, x_test, y_test, lr=0.01, epochs=5, repo
         np.random.shuffle(indices)
         x_train, y_train = x_train[indices], y_train[indices]
         for i in range(len(x_train)):
-            network.learn(x_train[i], y_train[i], lr)
+            network.learn(x_train[i], y_train[i], lr, momentum)
             total_cost += network._cost(x_train[i], y_train[i])
 
             if (i + 1) % report_every == 0 or i == len(x_train) - 1:
@@ -180,7 +187,7 @@ def train(network: NN, x_train, y_train, x_test, y_test, lr=0.01, epochs=5, repo
 
 
 input_path = 'data/'
-x_train, y_train, x_test, y_test = read_data(input_path, noise=True)
+x_train, y_train, x_test, y_test = read_data(input_path, noisy_test=False)
 layer_sizes = [x_train[0].shape[1], 128, 64, 10]
 x_train = x_train / 255.0
 x_test = x_test / 255.0

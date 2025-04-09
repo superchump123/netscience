@@ -19,14 +19,13 @@ def random_rotation(image, max_angle=15):
 
 class MnistDataloader(object):
     def __init__(self, training_images_filepath, training_labels_filepath,
-                 test_images_filepath, test_labels_filepath, noise=False):
+                 test_images_filepath, test_labels_filepath):
         self.training_images_filepath = training_images_filepath
         self.training_labels_filepath = training_labels_filepath
         self.test_images_filepath = test_images_filepath
         self.test_labels_filepath = test_labels_filepath
-        self.noise = noise
 
-    def read_images_labels(self, images_filepath, labels_filepath):
+    def read_images_labels(self, images_filepath, labels_filepath, noise):
         labels = []
         with open(labels_filepath, 'rb') as file:
             magic, size = struct.unpack(">II", file.read(8))
@@ -47,7 +46,7 @@ class MnistDataloader(object):
             img = np.array(image_data[i * rows * cols:(i + 1) * rows * cols])
             images[i] = img
 
-        if self.noise:
+        if noise:
             images = [img.reshape((28, 28)) for img in images]
 
             # Augment
@@ -66,20 +65,20 @@ class MnistDataloader(object):
 
         return np.matrix(images), np.matrix(labels)
 
-    def load_data(self):
-        x_train, y_train = self.read_images_labels(self.training_images_filepath, self.training_labels_filepath)
-        x_test, y_test = self.read_images_labels(self.test_images_filepath, self.test_labels_filepath)
+    def load_data(self, noisy_test=False):
+        x_train, y_train = self.read_images_labels(self.training_images_filepath, self.training_labels_filepath, True)
+        x_test, y_test = self.read_images_labels(self.test_images_filepath, self.test_labels_filepath, noisy_test)
         return (x_train, y_train), (x_test, y_test)
 
 
-def read_data(input_path, noise=False):
+def read_data(input_path, noisy_test=False):
     training_images_filepath = join(input_path, 'train-images-idx3-ubyte/train-images-idx3-ubyte')
     training_labels_filepath = join(input_path, 'train-labels-idx1-ubyte/train-labels-idx1-ubyte')
     test_images_filepath = join(input_path, 't10k-images-idx3-ubyte/t10k-images-idx3-ubyte')
     test_labels_filepath = join(input_path, 't10k-labels-idx1-ubyte/t10k-labels-idx1-ubyte')
 
     mnist_dataloader = MnistDataloader(training_images_filepath, training_labels_filepath,
-                                       test_images_filepath, test_labels_filepath, noise)
+                                       test_images_filepath, test_labels_filepath)
 
-    (x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data()
+    (x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data(noisy_test)
     return x_train, y_train, x_test, y_test
