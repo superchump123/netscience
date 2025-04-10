@@ -4,6 +4,7 @@ from layer import Layer
 
 class NN:
     def __init__(self, layer_sizes):
+        self.layer_sizes = layer_sizes
         self.layers: list[Layer] = []
         for i in range(len(layer_sizes) - 1):
             if i == len(layer_sizes) - 2:
@@ -58,6 +59,23 @@ class NN:
             self.grad_b[-i][:] = delta
 
         return self.grad_w, self.grad_b, cost
+
+    def save(self, filepath):
+        data = {}
+        for i, layer in enumerate(self.layers):
+            data[f"w{i}"] = layer.weights
+            data[f"b{i}"] = layer.biases
+            data[f"vw{i}"] = layer.w_velocities
+            data[f"vb{i}"] = layer.b_velocities
+        np.savez(filepath, **data)
+
+    def load(self, filepath):
+        data = np.load(filepath)
+        for i, layer in enumerate(self.layers):
+            layer.weights = data[f"w{i}"]
+            layer.biases = data[f"b{i}"]
+            layer.w_velocities = data.get(f"vw{i}", np.zeros_like(layer.weights))
+            layer.b_velocities = data.get(f"vb{i}", np.zeros_like(layer.biases))
 
     def learn(self, x, y, lr, momentum):
         grad_w, grad_b, cost = self.backprop(x, y)
