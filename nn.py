@@ -10,7 +10,7 @@ class NN:
                 self.layers.append(Layer(layer_sizes[i], layer_sizes[i+1], Layer.softmax))
             else:
                 self.layers.append(Layer(layer_sizes[i], layer_sizes[i+1], Layer.relu))
-        
+
         self.grad_w = [np.zeros_like(layer.weights) for layer in self.layers]
         self.grad_b = [np.zeros_like(layer.biases) for layer in self.layers]
 
@@ -27,7 +27,7 @@ class NN:
         for i, layer in enumerate(self.layers):
             layer.apply_gradient(learn, momentum, grad_w[i], grad_b[i])
 
-    def _cost(self, x, expected_label):
+    def cost(self, x, expected_label):
         output = self.calculate_outputs(x)
         epsilon = 1e-12  # to avoid log(0)
         return -np.log(output[expected_label] + epsilon)
@@ -36,6 +36,9 @@ class NN:
         output = self.calculate_outputs(x)
         expected = np.zeros_like(output)
         expected[y] = 1
+
+        cost = -np.log(output[y] + 1e-12)
+
         last = self.layers[-1]
         delta = output - expected
 
@@ -54,8 +57,9 @@ class NN:
             self.grad_w[-i][:] = np.outer(layer.last_input, delta)
             self.grad_b[-i][:] = delta
 
-        return self.grad_w, self.grad_b
+        return self.grad_w, self.grad_b, cost
 
     def learn(self, x, y, lr, momentum):
-        grad_w, grad_b = self.backprop(x, y)
+        grad_w, grad_b, cost = self.backprop(x, y)
         self._apply_gradients(lr, momentum, grad_w, grad_b)
+        return cost
