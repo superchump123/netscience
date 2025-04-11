@@ -1,0 +1,47 @@
+{
+    "digits_deep": {
+        "lr": 0.001,
+        "momentum": 0.9,
+        "layer_sizes": [
+            784,
+            256,
+            128,
+            64,
+            32,
+            10
+        ]
+    },
+    "fashion_big": {
+        "lr": 0.001,
+        "momentum": 0.9,
+        "layer_sizes": [
+            784,
+            1568,
+            128,
+            64,
+            32,
+            10
+        ]
+    },
+    "diabetes_shallow": {
+        "lr": 0.001,
+        "momentum": 0.9,
+        "layer_sizes": [
+            30,
+            128,
+            2
+        ]
+    },
+    "diabetes_deep": {
+        "lr": 0.001,
+        "momentum": 0.9,
+        "layer_sizes": [
+            30,
+            256,
+            128,
+            64,
+            32,
+            2
+        ]
+    }
+}

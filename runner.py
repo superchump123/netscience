@@ -43,7 +43,7 @@ match sys.argv[1]:
 
 
 dataset = sys.argv[1]
-x_train, y_train, x_test, y_test = read_data(dataset, noisy_train=True, noisy_test=False)
+x_train, y_train, x_test, y_test = read_data(dataset, noisy_train=False, noisy_test=False)
 
 if mnist_like:
     x_train = x_train / 255.0
@@ -60,19 +60,17 @@ match sys.argv[2]:
         layer_sizes = [x_train[0].shape[1], 2 * (x_train[0].shape[1]), 128, 64, 32, int(np.max(y_train)+1)]
 
     case 'diabetes':
-        layer_sizes = [x_train[0].shape[1], 10, int(np.max(y_train)+1)]
+        layer_sizes = [x_train[0].shape[1], 10, 10, int(np.max(y_train)+1)]
 
 n = NN(layer_sizes)
 model_name = f'{sys.argv[1]}_{sys.argv[2]}'
 model = Model(n)
-model.add_params(lr=0.001, momentum=0.9, layer_sizes=layer_sizes)
-model.load_metadata(model_name)
-loaded = model.load(model_name)
-if not sys.argv[1]:
-    exit()
+model.add_params(lr=0.0005, momentum=0.7, layer_sizes=layer_sizes)
+# model.load_metadata(model_name)
+# loaded = model.load(model_name)
 
 if sys.argv[3] == 'train':
-    model.train(x_train, y_train, 20)
+    model.train(x_train, y_train, 10)
 
 
 elif sys.argv[3] == 'test':
