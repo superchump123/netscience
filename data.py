@@ -1,4 +1,5 @@
 import numpy as np
+import polars as pl
 from scipy.ndimage import rotate
 import struct
 from array import array
@@ -14,6 +15,33 @@ def add_noise(image, noise_level=0.2):
 def random_rotation(image, max_angle=15):
     angle = np.random.uniform(-max_angle, max_angle)
     return rotate(image, angle, reshape=False, mode='nearest')
+
+
+def read_diabetes_data():
+    df = pl.read_csv('data/diabetes/diabetes_dataset.csv')
+
+    df = df.with_columns(
+        (pl.col("Fasting_Blood_Glucose") > 125).cast(pl.Int8).alias("Outcome")
+    )
+    df = df.drop("")
+    labels = df["Outcome"]
+    features = df.drop("Outcome")
+
+    nary_cols = ['Smoking_Status', 'Alcohol_Consumption', 'Physical_Activity_Level', 'Ethnicity', 'Sex']
+
+    features = features.to_dummies(columns=nary_cols)
+
+    features = features.with_columns([
+        ((pl.col(c) - pl.col(c).mean()) / pl.col(c).std()).alias(c) for c in features.columns
+    ])
+
+    x = features.to_numpy().astype(np.float32)
+    y = labels.to_numpy().astype(int)
+
+    test_percent = .2
+    test_start_x = int(len(x)*(1-test_percent))
+    test_start_y = int(len(y)*(1-test_percent))
+    return np.matrix(x[:test_start_x]), np.matrix(y[:test_start_y]), np.matrix(x[test_start_x:]), np.matrix(y[test_start_y:])
 
 
 class MnistDataloader(object):
@@ -72,7 +100,12 @@ class MnistDataloader(object):
 
 
 def read_data(dataset, noisy_train=True, noisy_test=False):
-    if dataset == 'digits':
+    if dataset == 'diabetes':
+        noisy_train = False
+        noisy_test = False
+        return read_diabetes_data()
+
+    elif dataset == 'digits':
         training_images_filepath = join('data', dataset, 'train-images-idx3-ubyte/train-images-idx3-ubyte')
         training_labels_filepath = join('data', dataset, 'train-labels-idx1-ubyte/train-labels-idx1-ubyte')
         test_images_filepath = join('data', dataset, 't10k-images-idx3-ubyte/t10k-images-idx3-ubyte')
